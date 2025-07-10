@@ -107,6 +107,10 @@ Below is a list of available Discord bot commands:
   - Heal a player by SID, or all players.
   - Options: `sid` (Player SID or "all" for all players)
 
+- **/setcallsign**
+  - Assign a callsign to an emergency worker by SID.
+  - Options: `sid` (Player SID), `callsign` (Callsign to assign (must be unique))
+
 - **/nuke**
   - Dramatically launches a nuclear strike on the server, triggering a 23-second countdown with Discord embed updates at key moments. At the end, the nuke detonates and a final embed is shown. Intended for fun or dramatic server events.
   - Usage: `/nuke`
@@ -159,6 +163,14 @@ This will display:
 - **Client logic** in `src/client.lua`
 - **Exports**: Lua and JS communicate via FiveM's `global.exports` and registered functions.
 
+### FiveM Console Commands
+
+- **/refreshguild [guildId]**
+  - Refreshes Discord slash commands for a specific guild
+  - Usage: `/refreshguild 123456789012345678` (replace with your Discord server ID)
+  - Useful when you've added new commands or need to update existing ones for a specific server
+  - Only works from the FiveM server console (not in-game)
+
 ### Adding/Editing Commands
 
 - Add new command files to `src/commands/`
@@ -194,4 +206,5 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 ## Credits
 
 - Developed by Salt
+- Better Command Registering by KR (ISKinGeR)
 - Uses [discord.js](https://discord.js.org/) and FiveM natives

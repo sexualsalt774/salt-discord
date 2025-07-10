@@ -9,6 +9,8 @@ function RetrieveComponents()
     Wallet = exports['mythic-base']:FetchComponent('Wallet') -- for cash?
     Banking = exports['mythic-base']:FetchComponent('Banking') -- for bank? why
     Callbacks = exports['mythic-base']:FetchComponent('Callbacks')
+    MDT = exports['skdev-base']:FetchComponent('MDT')
+    EmergencyAlerts = exports['skdev-base']:FetchComponent('EmergencyAlerts')
 end
 
 function FetchCharacterFromDB(stateId) -- functions that call this need to await but i could just await all main funcs anyway
@@ -42,6 +44,8 @@ AddEventHandler('Core:Shared:Ready', function()
         'Wallet',
         'Banking',
         'Callbacks',
+        'MDT',
+        'EmergencyAlerts',
     }, function(error)
         if #error > 0 then return; end
         RetrieveComponents()
@@ -131,6 +135,25 @@ AddEventHandler('Core:Shared:Ready', function()
         DISCORDBOT:RegisterFunction('getJobs', function()
             local jobs = Jobs:GetAll() -- list of jobs
             return jobs
+        end)
+
+        DISCORDBOT:RegisterFunction('setCallsign', function(sid, callsign)
+            sid = tonumber(sid)
+            local target = Fetch:SID(sid)
+            if not target then return false end
+
+            local source = target:GetData("Source")
+            if not Jobs.Permissions:HasJob(source, "police") and not Jobs.Permissions:HasJob(source, "ems") then
+                return false
+            end
+
+            local updated = MDT.People:Update(-1, sid, "Callsign", callsign)
+            if updated then
+                EmergencyAlerts:RefreshCallsign(sid, callsign)
+                return true
+            end
+
+            return false
         end)
 
         DISCORDBOT:RegisterFunction('giveJob', function(sid, jobId, gradeId, workplaceId)

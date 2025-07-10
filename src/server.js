@@ -5,7 +5,6 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
 const token = GetConvar('salt_discord_token', '');
-const clientId = GetConvar('salt_discord_client_id', '');
 const OWNER_ROLE_ID = GetConvar('salt_discord_owner_role_id', '1368391612274704444');
 
 const MySQL = global.exports.oxmysql // Our mysql system is using fivem hehe
@@ -94,7 +93,7 @@ function canRunCommand(member, commandName, cb) {
     });
 }
 
-if (!token || token === '' || !clientId || clientId === '' || !OWNER_ROLE_ID || OWNER_ROLE_ID === '') {
+if (!token || token === '' || !OWNER_ROLE_ID || OWNER_ROLE_ID === '') {
     console.error('^1[salt-discord] Discord token or client ID not found. Please set salt_discord_token, salt_discord_client_id and salt_discord_owner_role_id in your server.cfg^0');
 } else {
     const client = new Client({
@@ -118,23 +117,44 @@ if (!token || token === '' || !clientId || clientId === '' || !OWNER_ROLE_ID || 
         }
     }
 
-    const rest = new REST({ version: '9' }).setToken(token);
+    client.once('ready', async () => {
+        console.log(`^2[salt-discord] Logged in as ${client.user.tag}!^0`);
 
-    (async () => {
         try {
+            const app = await client.application.fetch();
+            const rest = new REST({ version: '9' }).setToken(token);
+
+            // Register global commands
             console.log(`^2[salt-discord] Started refreshing ${commandsToRegister.length} application (/) commands.^0`);
             await rest.put(
-                Routes.applicationCommands(clientId),
+                Routes.applicationCommands(app.id),
                 { body: commandsToRegister },
             );
             console.log(`^2[salt-discord] Successfully reloaded ${commandsToRegister.length} application (/) commands.^0`);
-        } catch (error) {
-            console.error(error);
-        }
-    })();
 
-    client.once('ready', () => {
-        console.log(`^2[salt-discord] Logged in as ${client.user.tag}!^0`);
+            // Console command: /refreshguild [guildId]
+            RegisterCommand('refreshguild', async (src, args) => {
+                if (src !== 0) return;
+
+                const guildId = args[0];
+                if (!guildId) {
+                    console.log('^1Usage: /refreshguild [guildId]^0');
+                    return;
+                }
+
+                try {
+                    await rest.put(
+                        Routes.applicationGuildCommands(app.id, guildId),
+                        { body: commandsToRegister },
+                    );
+                    console.log(`^2[salt-discord] Successfully refreshed commands for guild ${guildId}^0`);
+                } catch (err) {
+                    console.error(`^1[salt-discord] Failed to refresh commands for guild ${guildId}: ${err.message}^0`);
+                }
+            }, true);
+        } catch (error) {
+            console.error(`^1[salt-discord] Failed to register commands: ${error.message}^0`);
+        }
     });
 
     client.on('interactionCreate', (interaction) => {
